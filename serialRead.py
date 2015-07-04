@@ -1,7 +1,7 @@
 import serial
 import time
 import datetime
-import RPi.GPIO as GPIO
+import RPi.GPIO as RPIO
 from subprocess import call
 
 #once the Pi detects an edge, it reads from the Pi TODO: instead: send a signal, inside the recv() function of the
@@ -13,8 +13,7 @@ from subprocess import call
 increment = 0.392
 lowerTempLimit = -40.0
 packetLen = 49
-
-ser = serial.Serial('/dev/ttyACM1', 9600, timeout = 0.1)
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout = 0.1)
 
 def decodeTemp(t):
 	return float(t) * increment + lowerTempLimit
@@ -22,19 +21,21 @@ def decodeTemp(t):
 def decodeHumidity(h):
 	return float(h) *  increment
 
-def readFromSerial():
+def readFromSerial(channel):
 	#print ('callback')
 	arr = fillArray()
 	writeFile(arr)
-	GPIO.cleanup()
 	#print('finished')
+
 def fillArray():
 	a = [0]*packetLen
 	
 	for x in range(0, packetLen):
 		s = ser.read()
-		
-		a[x] = ord(s)
+		try:
+			a[x] = ord(s)
+		except TypeError:
+			continue
 	return a
 
 def writeFile(a):
@@ -56,17 +57,21 @@ def writeFile(a):
 		f.write("\n")
 		f.close()
 
-
+def main():
+	RPIO.setmode(RPIO.BCM)
+	RPIO.setup(4, RPIO.IN, pull_up_down = RPIO.PUD_DOWN )
+	RPIO.add_event_detect(4, RPIO.RISING, callback = readFromSerial)
 	
+	while True:
+		try:
+			time.sleep(60) 
+			dataFile =  "../../Dropbox-uploader/dropbox_uploader.sh upload dataFile.txt MonitorWizardResults.txt"
+			call ([dataFile], shell = True)  				
+		except  KeyboardInterrupt:
+			RPIO.cleanup()
 
-while 1:
-	try:
-		GPIO.setmode(GPIO.BCM)
-		GPIO.setup(4, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
-		GPIO.wait_for_edge(4, GPIO.RISING)
-		readFromSerial()
-	except KeyboardInterrupt:
-		GPIO.cleanup()
+if __name__ == "__main__":
+	main()
 		
 	#while True:
 		#sleep until 1AM each day and then upload the textfile
