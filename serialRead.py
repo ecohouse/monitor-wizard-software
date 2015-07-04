@@ -13,7 +13,7 @@ from subprocess import call
 increment = 0.392
 lowerTempLimit = -40.0
 packetLen = 49
-ser = serial.Serial('/dev/ttyACM0', 9600, timeout = 0.1)
+ser = serial.Serial('/dev/ttyACM2', 9600,)
 
 def decodeTemp(t):
 	return float(t) * increment + lowerTempLimit
@@ -23,8 +23,14 @@ def decodeHumidity(h):
 
 def readFromSerial(channel):
 	#print ('callback')
-	arr = fillArray()
-	writeFile(arr)
+	recv = ser.read(4)
+	print recv
+	if (recv == "SEND"):
+		arr = fillArray()
+		writeFile(arr)
+		ser.flushInput()
+	else:
+		ser.flushInput()
 	#print('finished')
 
 def fillArray():
@@ -64,7 +70,7 @@ def main():
 	
 	while True:
 		try:
-			time.sleep(60) 
+			time.sleep(180) 
 			dataFile =  "../../Dropbox-uploader/dropbox_uploader.sh upload dataFile.txt MonitorWizardResults.txt"
 			call ([dataFile], shell = True)  				
 		except  KeyboardInterrupt:
