@@ -13,7 +13,7 @@ from subprocess import call
 increment = 0.392
 lowerTempLimit = -40.0
 packetLen = 49
-ser = serial.Serial('/dev/ttyACM2', 9600,)
+ser = serial.Serial('/dev/ttyACM0', 9600,)
 
 def decodeTemp(t):
 	return float(t) * increment + lowerTempLimit
@@ -23,23 +23,23 @@ def decodeHumidity(h):
 
 def readFromSerial(channel):
 	#print ('callback')
-	recv = ser.read(4)
+	recv = ser.read(3)	
 	print recv
-	if (recv == "SEND"):
+	if (recv == "SEN"):
 		arr = fillArray()
 		writeFile(arr)
-		ser.flushInput()
-	else:
-		ser.flushInput()
+			
 	#print('finished')
+	ser.flushInput()
 
 def fillArray():
 	a = [0]*packetLen
 	
+	ser.readinto(a)
+	
 	for x in range(0, packetLen):
-		s = ser.read()
 		try:
-			a[x] = ord(s)
+			a[x] = ord(a[x])
 		except TypeError:
 			continue
 	return a
@@ -70,29 +70,22 @@ def main():
 	
 	while True:
 		try:
-			time.sleep(180) 
-			dataFile =  "../../Dropbox-uploader/dropbox_uploader.sh upload dataFile.txt MonitorWizardResults.txt"
-			call ([dataFile], shell = True)  				
+			t = datetime.datetime.today()
+			future = datetime.datetime(t.year, t.month, t.day, 1)
+			if (t.hour >= 1):
+				dataFile =  "../../Dropbox-uploader/dropbox_uploader.sh upload dataFile.txt MonitorWizardResults.txt"
+				call ([dataFile], shell = True)
+				future += datetime.timedelta(days = 1)
+			
+			d_t = future - t
+			time.sleep(int(d_t.total_seconds()))
+			  				
 		except  KeyboardInterrupt:
 			RPIO.cleanup()
 
 if __name__ == "__main__":
 	main()
 		
-	#while True:
-		#sleep until 1AM each day and then upload the textfile
-		#t = datetime.datetime.today()
-		#future = datetime.datetime(t.year, t.month, t.day, 1.0)
-		
-		#if t.hour >= 1:
-		#	#TODO: upload the data
-		#	 
-		#	call (dataFile, shell = True)
-		#	future += datetime.timedelta(days = 1)
-		#GPIO.cleanup()	
-		#
-		#time.sleep((future-t).second)
-
 
 			
 	
