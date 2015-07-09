@@ -25,7 +25,7 @@ def readFromSerial(channel):
 	#print ('callback')
 	recv = ser.read(3)	
 	print recv
-	if (recv == "SEN"):
+	if (recv == "MSG"):
 		arr = fillArray()
 		writeFile(arr)
 			
@@ -52,8 +52,11 @@ def writeFile(a):
 		time_stamp = time.time()
 		date_stamp = datetime.datetime.fromtimestamp(time_stamp).strftime('%Y-%m-%d %H:%M')
 		f.write(str(date_stamp) + "\t")
-	
-		for x in range(0, len(a)):
+		
+		#node ID
+		f.write(a[0] + "\t")
+
+		for x in range(1, len(a)):
 			if (x % 2 == 0):
 				temp = "{0:.1f}".format(decodeTemp(a[x])) 
 				f.write(temp + "\t")
